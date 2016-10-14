@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>Steam ID Converter</title>
+	<script>
+
+		/*  MIT License */
+		/*  Copyright (c) 2016 Igor Miladinovic (Igor Dot Ninja) http://igor.ninja  */
+		
+		function steam_id(){
+			var InputForm = document.getElementById("steam_input");//read the input
+			var data = InputForm.value; //load up text box into variable
+			data = data.replace(/^\s\s*/, "").replace(/\s\s*$/, "");; //trim spaces from start and end
+			InputForm.value=data; //revert string to input (trimmed)
+
+			var SID64_1 = "7656"; //Starting Steam ID is 76561197960265728 (javascript cant handle numbers that big, so i took firt 4 digits out) and use them as a string
+			var SID64_S = Number(1197960265728); //the rest of the digits from the Starting Steam ID (to calculate with) after calculations the remaining numbers will be SID64_2
+
+			var isSteamID = false; //prepare in case that its not a steamid
+			var isCustomUrl = false; //prepare in case that its not a custom url
+
+			var PatternSteam3ID = /^\[([Ug]):([0-9]):([0-9]+)\]$/; // [U:1:40571167] [letter:number:longer_number]
+			var PatternSteamID32 = /^STEAM_([0-9]):([0-9]):([0-9]+)$/; // STEAM_0:1:20285583 //find a string starting with STEAM_number:number:longer_number
+			var PatternSteamID64 = /7656([0-9]{12,14})/; // 76561198000836895 number starting with 7656 (SID32_1) and has 12-14 more numbers after (SID64_2)
+			var PatternCustomUrl = /steamcommunity\.com\/id\/([A-Za-z0-9-_]{2,32})/; //find an id starting with steamcommunity.com/id/ and having allowed characters 2-32 long
+			var PatternMaybeCustomUrl = /^([A-Za-z0-9-_]{2,32})$/; //just a string of 2-32 allowed chars
+
+			if(PatternSteam3ID.test(data)){ // [U:1:40571167]
+				var Steam3ID = PatternSteam3ID.exec(data);
+				var S3ID_1 = Steam3ID[1];
+				var S3ID_2 = Number(Steam3ID[2]);
+				var S3ID_3 = Number(Steam3ID[3]);
+				if(Math.abs(S3ID_3 % 2) == 1){var SID32_2 = 1;}else{var SID32_2 = 0;} //odd or even
+				var SID32_3 = ( S3ID_3 - SID32_2 )/2;
+				var SID64_2 = S3ID_3 + SID64_S;
+				isSteamID = true;
+			}else if(PatternSteamID32.test(data)){ // STEAM_0:1:20285583
+				var SteamID32 = PatternSteamID32.exec(data);
+				var SID32_1 = Number(SteamID32[1]);
+				var SID32_2 = Number(SteamID32[2]);
+				var SID32_3 = Number(SteamID32[3]);
+				var S3ID_3 = SID32_3 * 2 + SID32_2;
+				var SID64_2 = S3ID_3 + SID64_S;
+				isSteamID = true;
+			}else if(PatternSteamID64.test(data)){ // 76561198000836895
+				var SteamID64 = PatternSteamID64.exec(data);
+				SID64_2 = Number(SteamID64[1]);
+				var S3ID_3 = SID64_2 - SID64_S;
+				if(Math.abs(S3ID_3 % 2) == 1){var SID32_2 = 1;}else{var SID32_2 = 0;} //odd or even
+				var SID32_3 = ( S3ID_3 - SID32_2 ) / 2;
+				isSteamID = true;
+			}else if(PatternCustomUrl.test(data)){ // steamcommunity.com/id/IgorDotNinja
+				var CustomUrl = PatternCustomUrl.exec(data);
+				var CustomUrl = CustomUrl[1];
+				isCustomUrl = true;
+			}else if(PatternMaybeCustomUrl.test(data)){ // IgorDotNinja
+				var MaybeCustomUrl = PatternMaybeCustomUrl.exec(data);
+				var CustomUrl = MaybeCustomUrl[1];
+				isCustomUrl = true;
+			}
+
+			if(isCustomUrl == true){//handle custom url
+				document.getElementById("steam_info").innerHTML = "Custom URL: " + CustomUrl +"<br/><br/><a href=\"http://steamcommunity.com/id/" + CustomUrl +"\">http://steamcommunity.com/id/" + CustomUrl +"</a>";
+			}else if(isSteamID == true){//handle SteamIDs
+				var S3ID = "[U:1:"+S3ID_3+"]";
+				var SID32 = "STEAM_0:"+SID32_2+":"+SID32_3;
+				var SID64 = SID64_1+SID64_2;
+				document.getElementById("steam_info").innerHTML = "<table><tr style=\"width:200px;\"><td>Steam3ID</td><td>"+S3ID+"</td></tr> <tr><td>SteamID32</td><td>"+SID32+"</td></tr> <tr><td>SteamID64</td><td>"+SID64+"</td></tr> </table><br/><a href=\"https://steamcommunity.com/profiles/"+SID64+"\">https://steamcommunity.com/profiles/"+SID64+"</a>";
+			}else{//handle errors
+				document.getElementById("steam_info").innerHTML = "I dont know what is that";
+			}
+		}
+	</script>
+	<style>
+		#page{margin:100px auto;width:500px;background:#EEE;padding:20px;text-align:center;}
+		#steam_input{padding:10px;width:80%;}
+		#steam_info{margin:0 auto;text-align:left;width:80%;}
+		#footer{margin-top:50px;}
+		td{width:100px;padding:10px;}
+	</style>
+</head>
+<body>
+	<div id="page">
+		Steam ID Converter<br/><br/>
+		<input type="text" id="steam_input" placeholder="Any Steam ID or User URL"/><br/><br/>
+     	<button onclick="steam_id()">Steam it</button><br/><br/><br/>
+   	 	<div id="steam_info">
+
+   	 	</div>
+		<div id="footer">
+			Made by <a href="http://igor.ninja">igor.ninja</a> for <a href="http://steam.run">steam.run</a>
+		</div>
+	</div>
+</body>
+</html>
